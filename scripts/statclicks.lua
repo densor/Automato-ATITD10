@@ -19,6 +19,7 @@ items = {
         },
         --end
         {"",
+          "Barrel Grinder",
           "Churn Butter",
           "Dig Hole",
           "Dirt",
@@ -28,6 +29,7 @@ items = {
           "Limestone",
           "Oil (Flax Seed)",
           "Push Pyramid",
+          "Recycle Tattered Sail",
           "Stir Cement",
           "Weave Canvas",
           "Weave Linen",
@@ -50,6 +52,7 @@ items = {
           "Clay Lamp",
           "Crudely Carved Handle",
           "Flint Hammer",
+          "Heavy Mallet",
           "Large Crude Handle",
           "Long Sharp Stick",
           "Personal Chit",
@@ -123,6 +126,15 @@ function getClickActions()
                   y = y + 35;
                 end
             end
+
+            if items[i][tasks[i]] == "Weave Canvas" or items[i][tasks[i]] == "Weave Linen" 
+              or items[i][tasks[i]] == "Weave Papy Basket" or items[i][tasks[i]] == "Weave Wool Cloth" then 
+              y = y + 35;
+              reloadLoom = readSetting("reloadLoom",reloadLoom);
+              reloadLoom = lsCheckBox(5, y-30, z, 0xFFFFFFff, " Automatically reload Loom", reloadLoom);
+              writeSetting("reloadLoom",reloadLoom);
+            end
+
             if items[i][tasks[i]] == "Tap Rods" then
               y = y + 35;
               retrieveRods = readSetting("retrieveRods",retrieveRods);
@@ -136,11 +148,12 @@ function getClickActions()
               writeSetting("stashRawMaterials",stashRawMaterials);
             end
         end
+
         lsDoFrame();
         lsSleep(tick_delay);
-          if lsButtonText(150, 58, z, 100, 0xFFFFFFff, "OK") then
-            done = true;
-          end
+        if lsButtonText(150, 58, z, 100, 0xFFFFFFff, "OK") then
+          done = true;
+        end
     end
 end
 
@@ -152,50 +165,16 @@ function weave(clothType)
         srcType = "Thread";
         srcQty = "400";
     elseif clothType == "Basket" then
-        srcType = "Dried Papyrus";
+        srcType = "Papyrus";
         srcQty = "200";
     elseif clothType == "Wool" then
         srcType = "Yarn";
         srcQty = "60";
     elseif clothType == "Silk" then
-        srcType = "Raw Silk";
+        srcType = "Silk";
         srcQty = "50";
     end
-
-    srReadScreen();
-    local consume = srFindImage("consume.png");
-    if consume then
-        eatOnion();
-    end
-
-    if clothType == "Basket" then
-        weaveImage = srFindImage("statclicks/weave_papyrus.png");
-    else
-        weaveImage = srFindImage("statclicks/weave_" .. srcType .. ".png");
-    end
-    if weaveImage ~= nil then
-        safeClick(weaveImage[0],weaveImage[1]);
-        lsSleep(100);
-        --Close the error window if a student's loom
-        srReadScreen();
-        studloom = srFindImage("statclicks/student_loom.png")
-        if studloom then
-            lsSleep(500);
-            srReadScreen();
-            closePopUp();
-        end
-        -- reload the loom
-        loadImage = srFindImage("statclicks/with_" .. srcType .. ".png");
-        if loadImage ~= nil then
-            safeClick(loadImage[0],loadImage[1]);
-            local t = waitForImage("statclicks/how_much.png", 2000);
-            if t ~= nil then
-                srCharEvent(srcQty .. "\n");
-            end
-            closePopUp();
-        end
-    end
-
+    
     -- Restring student looms
     srReadScreen();
     if studloom then
@@ -208,6 +187,54 @@ function weave(clothType)
             closePopUp();
             lsSleep(75);
         end
+    end
+
+    -- reload the loom
+    if reloadLoom then
+      if not recycleSail then
+        loadImage = srFindImage("statclicks/with_" .. srcType .. ".png");
+        if loadImage ~= nil then
+          safeClick(loadImage[0],loadImage[1]);
+          local t = waitForImage("statclicks/how_much.png", 2000);
+            if t ~= nil then
+              srCharEvent(srcQty .. "\n");
+            end
+          closePopUp();
+          lsSleep(100); -- allow loom to not be busy
+        end
+      end
+    end
+
+    srReadScreen();
+    local consume = srFindImage("consume.png");
+    if consume then
+        eatOnion();
+    end
+
+    if clothType == "Basket" then
+      weaveImage = srFindImage("statclicks/weave_papyrus.png");
+    elseif clothType == "TatteredSail" then
+      srReadScreen();
+      recycleSail = findText("Recycle");
+    else
+      weaveImage = srFindImage("statclicks/weave_" .. srcType .. ".png");
+    end
+    if weaveImage or recycleSail ~= nil then
+      if recycleSail ~= nil then
+        safeClick(recycleSail[0],recycleSail[1]);
+      else
+        safeClick(weaveImage[0],weaveImage[1]);
+      end
+        lsSleep(100);
+        --Close the error window if a student's loom
+        srReadScreen();
+        studloom = srFindImage("statclicks/student_loom.png")
+          if studloom then
+            lsSleep(500);
+            srReadScreen();
+            closePopUp();
+          end
+
     end
 end
 
@@ -295,15 +322,42 @@ function stashAll()
 end
 
 function searchRottenWood()
-  woodForBugs = findText("Wood for Bugs");
-  if woodForBugs ~= nil then
-      clickText(woodForBugs);
+  searchForBugs = findText("Search for Bugs");
+  if searchForBugs ~= nil then
+      clickText(searchForBugs);
       lsSleep(per_tick);
       srReadScreen();
       closePopUp();
       lsSleep(per_tick);
   end
 end
+
+function grindMetal()
+  local startGrinder = findText("Start");
+  local repairGrinder = findText("Repair")
+
+  clickText(findText("This is [a-z]+ Barrel Grinder", nil, REGEX));
+
+    if startGrinder and repairGrinder then
+      clickText(repairGrinder);
+      lsSleep(per_tick);
+    elseif startGrinder and not repairGrinder then
+      clickText(startGrinder);
+      lsSleep(per_tick);
+    else
+      srReadScreen();
+      local wind = findText("Wind");
+        if wind ~= nil then
+          clickText(wind);
+          lsSleep(per_tick);
+          srReadScreen();
+          closePopUp();
+          lsSleep(per_tick);
+        end
+    end
+end
+
+
 
 function flaxOil()
   srReadScreen();
@@ -596,6 +650,8 @@ function doTasks()
                   carve(curTask);
                 elseif curTask == "Flint Hammer" then
                   carve(curTask);
+                elseif curTask == "Heavy Mallet" then
+                    carve(curTask);
                 elseif curTask == "Wooden Peg" then
                   carve(curTask);
                 elseif curTask == "Wooden Pestle" then
@@ -616,6 +672,8 @@ function doTasks()
                   weave("Canvas");
                 elseif curTask == "Weave Linen" then
                   weave("Linen");
+                elseif curTask == "Recycle Tattered Sail" then
+                  weave("TatteredSail");
                 elseif curTask == "Weave Wool Cloth" then
                   weave("Wool");
                 elseif curTask == "Weave Papy Basket" then
@@ -624,6 +682,8 @@ function doTasks()
                   gather("Limestone");
                 elseif curTask == "Dirt" then
                   gather("Dirt");
+                elseif curTask == "Barrel Grinder" then
+                  grindMetal();
                 elseif curTask == "Churn Butter" then
                   churnButter();
                 elseif curTask == "Stir Cement" then

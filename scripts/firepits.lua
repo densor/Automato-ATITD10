@@ -11,7 +11,7 @@ pitlocs = {};
 pitstokecnt = {};
 pitchangecnt = {};
 PIT_THRESH_UNSTOKE = 20;
-PIT_THRESH_STOKE = 4;
+PIT_THRESH_STOKE = 6;
 PIT_TEST_POINTS = 15;
 
 function doit()
@@ -98,9 +98,9 @@ function askForPitCounts()
     is_done, pc = lsEditBox("pitcount", 10, 40, 0, 50, 30, 1.0, 1.0, 0x000000ff, pitcount);
     pc = tonumber(pc);
 
-    if ((not pc) or (pc < 1) or (pc > 8)) then
+    if ((not pc) or (pc < 1)) then
       is_count = false;
-      lsPrint(10, 80, 0, 0.7, 0.7, 0xFF2020ff, "MUST BE A NUMBER 1..8");
+      lsPrint(10, 80, 0, 0.7, 0.7, 0xFF2020ff, "MUST BE A NUMBER");
     else
       is_count = true;
     end
@@ -216,7 +216,7 @@ function doStoke(pitnum)
   end
   x,y = srMousePos();
   srSetMousePos(pitlocs[pitnum][0], pitlocs[pitnum][1]);
-  lsSleep(150);
+  lsSleep(200);
   srKeyEvent('S');
   lsSleep(100);
   srSetMousePos(x, y);

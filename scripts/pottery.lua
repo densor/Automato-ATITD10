@@ -9,6 +9,9 @@ dropdown_values = {"Shift Key", "Ctrl Key", "Alt Key", "Mouse Wheel Click"};
 total_delay_time = 72000;
 dropdown_cur_value = 1;
 
+window_w = 235;
+window_h = 125;
+
 askText = "Mould Jugs, Clay Mortars and Cookpots\n\nSelect from either a pinned window configuration "
 .. "or mouse movement hotkeys.";
 
@@ -19,12 +22,12 @@ function doit()
 	askForWindow(askText);
 	promptParameters();
 	if pinnedMode then
-		windowManager("Pottery Wheel Setup", wmText, false, true, 235, 125, nil, 20, 25);
+		windowManager("Pottery Wheel Setup", wmText, false, true, window_w, window_h, nil, 20, 25);
 		sleepWithStatus(500, "Starting... Don\'t move mouse!");
-		start();
+		unpinOnExit(start);
 	elseif hotkeyMode then
     getPoints();
-    clickSequence();
+		clickSequence();
   end
 end
 
@@ -41,7 +44,7 @@ function start()
 				clickAllText("Cookpot");
 			end
 		lsSleep(500);
-		closePopUp();  --If you don't have enough cuttable stones in inventory, then a popup will occur.
+		closePopUp();  --If you don't have enough clay in your inventory, then a popup will occur.
 		checkMaking();
 	end
 	lsPlaySound("Complete.wav");
@@ -255,9 +258,9 @@ function checkMaking()
 	while 1 do
 		refreshWindows();
 		srReadScreen();
-		this = findAllText("This");
+		wheel = findAllText("Wheel");
 		making = findAllText("Mould a " .. product);
-			if #making == #this then
+			if #making == #wheel then
 				break; --We break this while statement because Making is not detect, hence we're done with this round
 			end
 		sleepWithStatus(999, "Waiting for " .. product .. "s to finish", nil, 0.7, "Monitoring Pinned Window(s)");
@@ -379,7 +382,6 @@ function MakeProduct()
 			product = "Clay Mortar"
 			srKeyEvent('m'); -- Mould a Clay Mortar [M]
 		elseif hotkeyTask == 3 then
-			sleepWithStatus(5000,"What is cookpotHotkey...." .. cookpotHotkey)
 			product = "Cookpot"
 			srKeyEvent(cookpotHotkey); -- Mould a Cookpot
 		end
